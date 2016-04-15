@@ -21,7 +21,7 @@ public class ClientRunner {
 	private static Socket connection;
 	private static Thread inputThread;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws UnknownHostException {
 		initConnection();
 		getName();
 		createInputThread();
@@ -42,6 +42,9 @@ public class ClientRunner {
 				}
 			}
 		};
+		/*
+		 * Set as daemon to terminate if Output loop ends 
+		 */
 		inputThread.setDaemon(true);
 		inputThread.start();
 	}
@@ -49,7 +52,10 @@ public class ClientRunner {
 	private static void mainOutputLoop() {
 		String message = "";
 		try(DataInputStream s = new DataInputStream(connection.getInputStream())){
-			while(true){
+			/*
+			 * Loop ends when Input thread terminates
+			 */
+			while(inputThread.isAlive()){
 				if(s.available() > 0){
 					message += s.readUTF();
 				}
@@ -60,17 +66,22 @@ public class ClientRunner {
 		console.println(message);		
 	}
 
-	private static void initConnection() {
+	private static void initConnection() throws UnknownHostException,IllegalArgumentException {
 		console.println("Connect to server(IP:port):");
 		String[] address = input.nextLine().split(":");
-		if (address.length < 1){
+		if (address.length < 2){
 			throw new IllegalArgumentException("Incorrect address parameter");
 		}
 		int port = Integer.valueOf(address[1]);
-		Byte[] ip = Arrays.asList(address[1].split(".")).stream()
-				.map(Byte::parseByte)
-				.collect(Collectors.toList())
-				.toArray(new Byte[0]);
+		byte[] ip = new byte[4];
+		String[] sByte = address[0].split("\\.");
+		if (sByte.length == 4){
+			for(int i = 0; i < 4; i++){
+				ip[i] = (byte) Integer.parseInt(sByte[i]);
+			}
+		}else{
+			throw new IllegalArgumentException("Can not parse ip");
+		}
 		
 		//extra operation. How to convert Byte[] to byte[] in stream...
 		byte[] ipPrim = new byte[ip.length];
@@ -83,7 +94,7 @@ public class ClientRunner {
 			connection = new Socket(ipAddress, port);
 		}
 		catch(UnknownHostException e){
-			System.out.println(e);
+			throw e;
 		} catch (IOException e) {
 			System.out.println(e);
 		}

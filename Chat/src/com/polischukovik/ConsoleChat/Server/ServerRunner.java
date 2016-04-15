@@ -2,9 +2,12 @@ package com.polischukovik.ConsoleChat.Server;
 import java.io.IOException;
 
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
+
+import javax.swing.text.StyledEditorKit.ForegroundAction;
 
 import com.polischukovik.ConsoleChat.ErrorReason;
 /**
@@ -23,7 +26,12 @@ public class ServerRunner {
 
 	public static void main(String[] args) {
 		setEnv(args);
-		try(ServerSocket serverSocket = new ServerSocket(port)){
+		
+		/*
+		 * Accept incoming client connections and spawn threads for them
+		 */
+		try(ServerSocket serverSocket = new ServerSocket(port)){		
+			System.out.println("Server started " + InetAddress.getLocalHost().getHostAddress() + " port " + serverSocket.getLocalPort());
 			Socket client = serverSocket.accept();
 			clientList.add(new Server(client));
 			
