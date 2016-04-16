@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -60,6 +61,7 @@ public class ClientRunner {
 					message += s.readUTF();
 				}
 			}
+			
 		} catch (IOException e) {
 			System.out.println(e);
 		}		
@@ -83,14 +85,8 @@ public class ClientRunner {
 			throw new IllegalArgumentException("Can not parse ip");
 		}
 		
-		//extra operation. How to convert Byte[] to byte[] in stream...
-		byte[] ipPrim = new byte[ip.length];
-		for (int i = 0; i<ip.length; i++){
-			ipPrim[i] = (byte) ip[i]; 
-		}
-		
 		try{
-			InetAddress ipAddress = InetAddress.getByAddress(ipPrim);
+			InetAddress ipAddress = InetAddress.getByAddress(ip);
 			connection = new Socket(ipAddress, port);
 		}
 		catch(UnknownHostException e){
