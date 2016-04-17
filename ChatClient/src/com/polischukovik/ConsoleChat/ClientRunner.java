@@ -21,8 +21,9 @@ public class ClientRunner {
 	private static String name;
 	private static Socket connection;
 	private static Thread inputThread;
+	private static boolean running = true;
 
-	public static void main(String[] args) throws UnknownHostException {
+	public static void main(String[] args) throws IllegalArgumentException, IOException {
 		initConnection();
 		getName();
 		createInputThread();
@@ -33,14 +34,20 @@ public class ClientRunner {
 		inputThread = new Thread(){
 			@Override
 			public void run(){
-				String message = name.concat(": ");
+				console.println("Input thread started");
+				int errorTolerancy = 0;
 				try(DataOutputStream os = new DataOutputStream(connection.getOutputStream())){
-					message += input.nextLine();
-					
-					os.writeUTF(message);
+					while(running & errorTolerancy < 3){
+						String message = name.concat(": ");
+						message += input.nextLine();
+						os.writeUTF(message);
+						os.flush();
+					}
 				} catch (IOException e) {
+					errorTolerancy++;
 					System.out.println(e);
 				}
+				console.println("Input thread ended");
 			}
 		};
 		/*
@@ -51,24 +58,25 @@ public class ClientRunner {
 	}
 
 	private static void mainOutputLoop() {
+		console.println("Output loop starting");
 		String message = "";
 		try(DataInputStream s = new DataInputStream(connection.getInputStream())){
 			/*
 			 * Loop ends when Input thread terminates
 			 */
 			while(inputThread.isAlive()){
-				if(s.available() > 0){
-					message += s.readUTF();
-				}
+				message += s.readUTF();
+				console.println(message);	
+				
 			}
 			
 		} catch (IOException e) {
 			System.out.println(e);
 		}		
-		console.println(message);		
+		console.println("Output loop ended");		
 	}
 
-	private static void initConnection() throws UnknownHostException,IllegalArgumentException {
+	private static void initConnection() throws IllegalArgumentException, IOException {
 		console.println("Connect to server(IP:port):");
 		String[] address = input.nextLine().split(":");
 		if (address.length < 2){
@@ -85,16 +93,11 @@ public class ClientRunner {
 			throw new IllegalArgumentException("Can not parse ip");
 		}
 		
-		try{
-			InetAddress ipAddress = InetAddress.getByAddress(ip);
-			connection = new Socket(ipAddress, port);
-		}
-		catch(UnknownHostException e){
-			throw e;
-		} catch (IOException e) {
-			System.out.println(e);
-		}
+		InetAddress ipAddress = InetAddress.getByAddress(ip);
+		connection = new Socket(ipAddress, port);
+		System.out.println();
 		
+
 	}
 
 	private static void getName() {
@@ -104,6 +107,13 @@ public class ClientRunner {
 	
 	public void outputMessage(String message){
 		console.println(message);		
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		// TODO Auto-generated method stub
+		super.finalize();
+		connection.close();
 	}
 
 }

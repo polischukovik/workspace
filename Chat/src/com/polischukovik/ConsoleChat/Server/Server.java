@@ -16,6 +16,7 @@ public class Server{
 
 	public Server(Socket client) {	
 		this.client = client; 
+		console.println("Client joined " + client.getInetAddress().getHostAddress());
 		createInpoutThread();
 	}
 	
@@ -28,38 +29,48 @@ public class Server{
 			public void run(){
 				//here input message and send to server			
 				String message = "";
-				try(DataInputStream input = (DataInputStream) client.getInputStream()){
+				try(DataInputStream input = new DataInputStream(client.getInputStream())){
 					
 					/*
 					 * Loop ends when Input thread terminates
 					 */
 					while(readerThread.isAlive()){
-						if (input.available() > 0) {
-							message = input.readUTF();
-							ServerRunner.distributeMessage(message);
-						}						
+						message = input.readUTF();
+						ServerRunner.distributeMessage(message);						
 					}
 				}				
 				catch (IOException e) {
-					System.out.println(e);
+					console.println("Message reader error " + e);
+					e.printStackTrace();
 				}
+				console.print("Client left " + client.getInetAddress());
 			}
 		};
-		readerThread.start();
+		
 		/*
 		 * Set as daemon to terminate if Output loop ends 
 		 */
 		readerThread.setDaemon(true);
+		readerThread.start();
+		
 	}
 	
 	public void outputMessage(String message){
 		try(DataOutputStream output = new DataOutputStream(client.getOutputStream())){
-			output.writeUTF(message);		
+			output.writeUTF(message);	
+			output.flush();
 		}				
 		catch (IOException e) {
-			System.out.println(e);
+			console.println("Output message error " + e);
 		}		
 			
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		// TODO Auto-generated method stub
+		super.finalize();
+		client.close();
 	}
 
 }
