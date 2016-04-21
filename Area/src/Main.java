@@ -49,7 +49,9 @@ public class Main {
 
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				coords.setText("Coordinates: " + comp.mouseGridCoords(e));				
+				Point p = comp.mouseGridCoords(e);
+				coords.setText("Coordinates: " + p.getX() + ";" + p.getY());	
+				comp.changeFocus(p.x, p.y);
 			}
 
 		});

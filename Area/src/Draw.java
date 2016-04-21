@@ -2,6 +2,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -22,8 +23,9 @@ public class Draw extends JComponent {
 	private int dimScreenSizeX;
 	private int dimScreenSizeY;
 	
-	private HashSet<Point> grid = new HashSet<Point>();
-	private NavigableSet<Double> gridX = new TreeSet<>(Point.coordinateComparator);
+	private NavigableSet<Point> grid = new TreeSet<>(Point.pointComparator);
+	
+	private Rectangle focus = null;
 
 	private static class Line {
 		
@@ -42,8 +44,42 @@ public class Draw extends JComponent {
 			
 		}
 	}
+	
+    private static class Rectangle {
+		
+		final int x;
+		final int y;
+		final int width;
+		final int heigth;
+		final Color color;
+
+		public Rectangle(int x, int y, int width, int heigth, Color color) {
+			this.x = x;
+			this.y = y;
+			this.width = width;
+			this.heigth = heigth;
+			this.color = color;			
+		}
+		
+	}
 
 	private final LinkedList<Line> lines = new LinkedList<Line>();
+	private final LinkedList<Rectangle> rec = new LinkedList<>();
+	
+	public void changeFocus(int x1, int x2) {
+		if(focus != null){
+			Rectangle fil = new Rectangle(focus.x-1, focus.y-1, 3, 3, getBackground());
+			rec.remove(focus);
+			rec.add(fil);
+		}
+		
+		rec.removeIf( n -> n.color == getBackground() );
+		
+		focus = new Rectangle(x1-1, x2-1, 3, 3, Color.GRAY);
+		rec.add(focus);
+		repaint();
+	}
+	
 
 	public Draw(int dimscreensizex, int dimscreensizey) {
 		dimScreenSizeX=dimscreensizex;
@@ -71,31 +107,32 @@ public class Draw extends JComponent {
 			g.setColor(line.color);
 			g.drawLine(line.x1, line.y1, line.x2, line.y2);
 		}
+		
+		for (Rectangle r : rec) {
+			g.setColor(r.color);
+			g.drawRect(r.x, r.y, r.width, r.heigth);
+		}
 	}
 
 	public void createGrid(int pixelratio) {
-		int cnt = 0;
-		Point.xRegisters = (int) Math.pow(10, String.valueOf(dimScreenSizeX).length());
+		Point.yRegisters = (int) Math.pow(10, String.valueOf(dimScreenSizeY).length());
 		for(int i = 0; i < dimScreenSizeX; i+=pixelratio){			   
 	        for(int j = 0; j < dimScreenSizeY; j+=pixelratio){       
 		        this.addLine(i, j, i, j, Color.GRAY);
 		        grid.add(new Point(i, j));		        
-			}		        
-		}		
-//		for(Point p : grid){
-//			System.out.println("creating point "+p.getX()+";"+p.getY());
-//			
-//		}
+			}
+		}
+		System.out.println(grid.size());
 	}
 
-	public String mouseGridCoords(MouseEvent e) {
+	public Point mouseGridCoords(MouseEvent e) {
 		if(!this.contains(e.getPoint())){
-			return "x: 0 y:0";
+			return new Point(0,0);
 		}
 		Point mousePosition = new Point(e.getX(),e.getY());
 		Point p = grid.floor(mousePosition);		
 		System.out.println();
-		return "x: " + p.getX() + "y: " + p.getY() + "  "+ grid.size() ;
+		return new Point((int)p.getX(),(int)p.getY());
 	}
 
 }
