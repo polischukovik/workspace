@@ -8,10 +8,65 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 class WaveAlgorytm {
-	Map<Integer,Integer> labels = new HashMap<Integer, Integer>();
+	HashMap<Integer, List<Integer>> net;
+	Map<Integer,Integer> labels;
+	int nodeCnt;
+	int startNode, endNode;
+	List<Integer> path;
 	
-	public WaveAlgorytm(Integer startNode) {		
+	public WaveAlgorytm(int startNode, int targetNode, HashMap<Integer, List<Integer>> net, int nodeCnt) {		
+		this.net = net;
+		this.nodeCnt = nodeCnt;
+		this.labels = new HashMap<>();
+		this.path = new ArrayList<>();
+		this.startNode = startNode;
+		this.endNode = targetNode;
+//		for(Integer n : net.keySet()){
+//			labels.put(n, null);
+//		}
 		labels.put(startNode, 0);
+		evalWave();
+		recPath(targetNode);
+	}
+	
+	private void evalWave(){
+		int lblCnt = 0;
+		for(; lblCnt < nodeCnt - 1; lblCnt++){
+			//get nodes with label N
+			for(int n : getLabeled(lblCnt)){
+				//get neighbors and mark them N+1
+				for(int x : net.get(n)){
+					if(!labels.containsKey(x)){
+						labels.put(x, lblCnt + 1);
+						//finish when riches target
+						if(x == endNode) return;
+					}
+				}
+			}
+		}
+	}
+	
+	private void recPath(int c){
+		path.add(c);
+		if(c == startNode) return;
+		for(int x : net.get(c)){
+			if(labels.get(x).equals(labels.get(c) - 1)){
+				recPath(x);
+				break;
+			}
+		}
+	}
+	
+	private List<Integer> getLabeled(int N){
+		List<Integer> list = new ArrayList<>();
+		for(int i : labels.keySet()){
+			if(labels.get(i).equals(N)) list.add(i);
+		}
+		return list;
+	}
+	
+	public List<Integer> getPath(){
+		return path;
 	}
 
 }
@@ -52,7 +107,7 @@ public class Player {
         }
         
         for(Integer k : net.keySet()){
-             System.err.println("NODE "+ k + ": " + showNode(k));
+             System.err.println("NODE "+ k + ": " + " node: " + k + ": " + net.get(k).stream().map(n -> n.toString()).collect(Collectors.joining(",")));
         }
         
         for (int i = 0; i < E; i++) {
@@ -68,7 +123,8 @@ public class Player {
             SI = in.nextInt(); // The index of the node on which the Skynet agent is positioned this turn
             System.err.println("SI="+SI);
 
-			
+			WaveAlgorytm w = new WaveAlgorytm(gateway[0], SI, net, L);
+			System.err.println("Path: " + w.getPath().stream().map(s -> s.toString()).collect(Collectors.joining(",")));
 			
 			
 			System.out.println(0 + " " + 0);
@@ -79,9 +135,5 @@ public class Player {
             // Example: 0 1 are the indices of the nodes you wish to sever the link between
             //System.out.println("0 1");
         }
-	
-	static String showNode(Integer k){
-		return " node: " + k + ": " + net.get(k).stream().map(n -> n.toString()).collect(Collectors.joining(","));
-	}    
-
+	}
 }
